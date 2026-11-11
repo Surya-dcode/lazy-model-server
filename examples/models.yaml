@@ -1,0 +1,33 @@
+# Example config. Run with:  lazyserve --config examples/models.yaml
+#
+# Models load on their first request. When loading one would push the charged
+# memory over max_memory_mb, the least recently used unpinned models are
+# unloaded first.
+
+max_memory_mb: 600          # omit for no budget
+idle_check_interval_s: 5    # how often the idle sweeper runs
+warm: [classifier]          # loaded at startup
+
+models:
+  - name: classifier
+    loader: lazyserve.examples.logistic:load
+    memory_mb: 5
+    pin: true               # never evicted or idle-unloaded
+
+  - name: ballast-small
+    loader: lazyserve.examples.ballast:load
+    memory_mb: 150          # declared estimate, charged before the load
+    idle_ttl_s: 60
+    options: {size_mb: 150, load_delay_s: 0.3}
+
+  - name: ballast-large
+    loader: lazyserve.examples.ballast:load
+    # no memory_mb: charged by the RSS delta measured after the load
+    idle_ttl_s: 60
+    options: {size_mb: 350, load_delay_s: 0.5}
+
+  - name: mlp
+    loader: lazyserve.examples.torch_mlp:load   # needs the torch extra
+    memory_mb: 300
+    idle_ttl_s: 120
+    options: {hidden: 512}
